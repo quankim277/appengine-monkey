@@ -100,6 +100,8 @@ This will also give you a warning if there are any eggs installed as zip-files (
 
 At least you should edit development.ini to change the line {{{egg:MyApplication}}} to match your application name.  You can add other configuration as well in this file to control your application.
 
+You can also copy over the develoment.ini file from your new Pylons application.
+
 Currently there's no mechanism in paste-deploy.py to differentiate configuration under the SDK and configuration under the live App Engine environment.  But that should be added at some point.
 
 10. Running you application
