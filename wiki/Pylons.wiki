@@ -117,7 +117,11 @@ Note that you should *not* use the virtualenv python to run dev_appserver.py.
 To upload the application:
 
 {{{
-/usr/bin/python2.5 appcfg.py my-app
+/usr/bin/python2.5 appcfg.py update my-app
 }}}
 
 If you have many libraries you might find that you hit a [http://code.google.com/p/googleappengine/issues/detail?id=161&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary 1000 file limit].  This limit is stupid; please go star that ticket to learn when it will go away.  Sometimes unnecessary packages will be in {{{my-app/lib/python2.5/site-packages}}}, which you can delete to get under 1000 files.
+
+Sometimes failures will be intermittent.  If it fails, try again.
+
+You should get a lot of warnings about files that are too big.  This is okay.  These files would ideally be skipped with skip_files in app.yaml, but [http://code.google.com/p/googleappengine/issues/detail?id=80&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary I haven't figured it out yet].
