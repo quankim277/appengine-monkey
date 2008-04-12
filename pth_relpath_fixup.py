@@ -1,5 +1,5 @@
 """
-Changes any absolute paths in .pth files to be relative
+Changes any absolute paths in .pth files to be relative.  Also changes .egg-link files
 """
 import sys
 import os
@@ -18,6 +18,11 @@ def main():
                 else:
                     print 'Fixing up pth file %s' % filename
                     fixup_pth_file(filename)
+            if filename.endswith('.egg-link'):
+                if not os.access(filename, os.W_OK):
+                    print 'Cannot write .egg-link file %s, skipping' % filename
+                else:
+                    fixup_egg_link(filename)
 
 def fixup_pth_file(filename):
     lines = []
@@ -34,6 +39,19 @@ def fixup_pth_file(filename):
     f.close()
     f = open(filename, 'w')
     f.write('\n'.join(lines) + '\n')
+    f.close()
+
+def fixup_egg_link(filename):
+    f = open(filename)
+    link = f.read().strip()
+    f.close()
+    if os.path.abspath(link) != link:
+        # Relative path
+        return
+    new_link = make_relative_path(filename, link)
+    print 'Rewriting link %s in %s as %s' % (link, filename, new_link)
+    f = open(filename, 'w')
+    f.write(new_link)
     f.close()
 
 def make_relative_path(source, dest, dest_is_directory=True):

@@ -19,7 +19,7 @@ libraries.
       url='http://code.google.com/p/appengine-monkey/',
       license='MIT',
       py_modules=['pth_relpath_fixup', 'appengine_monkey',
-                  'subprocess'],
+                  'subprocess', 'zipimport'],
       include_package_data=True,
       zip_safe=False,
       install_requires=[
