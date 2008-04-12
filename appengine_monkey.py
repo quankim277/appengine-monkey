@@ -68,6 +68,11 @@ def popen(*args, **kw):
     else:
         raise NotImplemented("os.open is not implemented")
 
+# Again for Mac and pkg_resources:
+@patch(os)
+def uname():
+    return ('AppEngine', 'appengine-host', '0.0.0', '#1', 'i386')
+
 try:
     import pkg_resources
 except ImportError:
