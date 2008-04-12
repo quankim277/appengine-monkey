@@ -29,6 +29,8 @@ Note that all applications need a unique name that you registered ahead of time 
 python2.5 appengine-boot.py --paste-deploy my-app
 }}}
 
+You can put that anywhere, you don't have to put it under the appengine-monkey directory that you checked out.
+
 3. Start using your virtualenv
 
 You can use this virtualenv just like any other.  If you use {{{--paste-deploy}}}, the {{{paste-deploy.py}}} file will load up the libraries in the virtualenv.  Otherwise look at [http://appengine-monkey.googlecode.com/svn/trunk/paste-deploy.py paste-deploy.py] to get an idea of how to activate it.
@@ -99,3 +101,21 @@ This will also give you a warning if there are any eggs installed as zip-files (
 At least you should edit development.ini to change the line {{{egg:MyApplication}}} to match your application name.  You can add other configuration as well in this file to control your application.
 
 Currently there's no mechanism in paste-deploy.py to differentiate configuration under the SDK and configuration under the live App Engine environment.  But that should be added at some point.
+
+10. Running you application
+
+Your application should be ready to run under the SDK or on App Engine itself.  To run it in the SDK:
+
+{{{
+/usr/bin/python2.5 dev_appserver.py my-app
+}}}
+
+Note that you should *not* use the virtualenv python to run dev_appserver.py.
+
+To upload the application:
+
+{{{
+/usr/bin/python2.5 appcfg.py my-app
+}}}
+
+If you have many libraries you might find that you hit a [http://code.google.com/p/googleappengine/issues/detail?id=161&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary 1000 file limit].  This limit is stupid; please go star that ticket to learn when it will go away.  Sometimes unnecessary packages will be in {{{my-app/lib/python2.5/site-packages}}}, which you can delete to get under 1000 files.
