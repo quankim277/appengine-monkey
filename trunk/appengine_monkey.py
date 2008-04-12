@@ -10,10 +10,17 @@ class Missing(object):
     def __repr__(self):
         return '<Missing function %s>' % self.name
 
+def patch(module):
+    def decorate(func):
+        setattr(module, func.func_name, func)
+        return func
+    return decorate
+
 os.utime = Missing('os.utime')
 os.rename = Missing('os.rename')
 os.unlink = Missing('os.unlink')
 os.open = Missing('os.open')
+
 
 def can_access(path):
     try:
@@ -24,19 +31,20 @@ def can_access(path):
 
 sys.path = [p for p in sys.path if can_access(p)]
 
-def imp_acquire_lock():
+@patch(imp)
+def acquire_lock():
     pass
-imp.acquire_lock = imp_acquire_lock
 
-def imp_release_lock():
+@patch(imp)
+def release_lock():
     pass
-imp.release_lock = imp_release_lock
 
-def imp_load_module(fullname, fp, filename, etc):
+@patch(imp)
+def load_module(fullname, fp, filename, etc):
     pass
-imp.load_module = imp_load_module
 
-def imp_find_module(subname, path):
+@patch(imp)
+def find_module(subname, path):
     for p in path:
         full_py = os.path.join(p, subname + '.py')
         full_dir = os.path.join(p, subname, '__init__.py')
@@ -44,4 +52,7 @@ def imp_find_module(subname, path):
             if os.path.exists(full):
                 return open(full), full, None
     return None, '', None
-imp.find_module = imp_find_module
+
+@patch(os)
+def readlink(path):
+    return path
