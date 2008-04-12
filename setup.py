@@ -18,8 +18,7 @@ libraries.
       author_email='google-appengine@googlegroups.com',
       url='http://code.google.com/p/appengine-monkey/',
       license='MIT',
-      py_modules=['pth_relpath_fixup', 'appengine_monkey',
-                  'subprocess', 'zipimport'],
+      py_modules=['pth_relpath_fixup', 'appengine_monkey'],
       include_package_data=True,
       zip_safe=False,
       install_requires=[
