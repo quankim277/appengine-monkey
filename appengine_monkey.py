@@ -57,6 +57,17 @@ def find_module(subname, path):
 def readlink(path):
     return path
 
+# This is for the Mac pkg_resources when run in the SDK:
+@patch(os)
+def popen(*args, **kw):
+    if not kw and args == ('/usr/bin/sw_vers',):
+        # This is what pkg_resources uses to detect the version
+        from StringIO import StringIO
+        ## FIXME: somewhat lamely, all systems become 10.5.2
+        return StringIO('ProductName:	Mac OS X\nProductVersion:	10.5.2\nBuildVersion:	000000')
+    else:
+        raise NotImplemented("os.open is not implemented")
+
 try:
     import pkg_resources
 except ImportError:
