@@ -1,4 +1,5 @@
 #summary How to get Pylons working on appengine
+#labels pylons,appengine
 
 = Introduction =
 
@@ -10,7 +11,15 @@ appengine has several modules and functions disabled which, by themselves, make 
 
 Here's the basic instructions:
 
-1. Set up a new virtualenv-based sandbox.  
+1. Acquire the code
+
+Check out the source code for appengine-monkey, like:
+
+{{{
+svn checkout http://appengine-monkey.googlecode.com/svn/trunk/ appengine-monkey
+}}}
+
+2. Set up a new virtualenv-based sandbox.  
 
 The option {{{--paste-deploy}}} tells it to write in the files for doing a [http://pythonpaste.org/deploy/ Paste Deploy] based application.  This reads a configuration file ({{{development.ini}}}) to load up the application, and sets up the CGI runner to send a request to that application.
 
@@ -20,7 +29,7 @@ Note that all applications need a unique name that you registered ahead of time 
 python2.5 appengine-boot.py --paste-deploy my-app
 }}}
 
-2. Start using your virtualenv
+3. Start using your virtualenv
 
 You can use this virtualenv just like any other.  If you use {{{--paste-deploy}}}, the {{{paste-deploy.py}}} file will load up the libraries in the virtualenv.  Otherwise look at [http://appengine-monkey.googlecode.com/svn/trunk/paste-deploy.py paste-deploy.py] to get an idea of how to activate it.
 
@@ -33,7 +42,7 @@ source bin/activate
 
 This will change your prompt to help you remember you are working in the virtualenv, and commands you run will effect the virtualenv.  
 
-3. Install the packages
+4. Install the packages
 
 In addition to Pylons, we'll install [http://jinja.pocoo.org/ Jinja], because currently it's one of the few templating options that work (Mako and Genshi both have issues with App Engine).
 
@@ -41,14 +50,14 @@ In addition to Pylons, we'll install [http://jinja.pocoo.org/ Jinja], because cu
 easy_install Pylons Jinja
 }}}
 
-4. Create your application
+5. Create your application
 
 {{{
 cd src
 paster create --template=pylons MyApplication
 }}}
 
-5. Change templating engines
+6. Change templating engines
 
 Since Mako isn't working (though fixes are in progress), we'll switch it to use Jinja.  Edit the file {{{MyApplication/myapplication/config/environment.py}}}, changing the {{{config.init_app}}} line, and adding some code:
 
@@ -66,7 +75,7 @@ Since Mako isn't working (though fixes are in progress), we'll switch it to use 
         })
 }}}
 
-6. Install your application
+7. Install your application
 
 To get your application installed, run (inside the virtualenv):
 
@@ -75,7 +84,7 @@ cd my-app/src/MyApplication
 python setup.py develop
 }}}
 
-7. Fix up your paths
+8. Fix up your paths
 
 Because your file locations will change when you upload them, all your paths in the environment have to be relative.  There's some paths created for you when you ran {{{python setup.py develop}}}, so you have to run this script to fix them (and re-run it anytime you call that again).  Again in the virtualenv, run:
 
@@ -85,7 +94,7 @@ python -m pth_relpath_fixup
 
 This will also give you a warning if there are any eggs installed as zip-files (the virtualenv should have configured easy_install not to do this, but it checks just in case that didn't work).  appengine currently does not support zipped packages.
 
-8. Edit development.ini
+9. Edit development.ini
 
 At least you should edit development.ini to change the line {{{egg:MyApplication}}} to match your application name.  You can add other configuration as well in this file to control your application.
 
