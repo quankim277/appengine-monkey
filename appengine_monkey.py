@@ -66,4 +66,7 @@ else:
         # This only seems to apply to the SDK
         pkg_resources.register_loader_type(type(os.__loader__), pkg_resources.DefaultProvider)
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'module-replacements'))
+file_dir = os.path.dirname(__file__)
+if os.path.exists(os.path.join(file_dir, 'appengine_monkey_files')):
+    file_dir = os.path.join(file_dir, 'appengine_monkey_files')
+sys.path.insert(0, os.path.join(file_dir, 'module-replacements'))

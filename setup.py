@@ -19,7 +19,10 @@ libraries.
       url='http://code.google.com/p/appengine-monkey/',
       license='MIT',
       py_modules=['pth_relpath_fixup', 'appengine_monkey'],
-      include_package_data=True,
+      # A horrible hack to get these files installed:
+      packages=['appengine_monkey_files'],
+      package_dir={'appengine_monkey_files': '.'},
+      package_data={'appengine_monkey_files': ['module-replacements/*.py', 'development.ini', 'app.yaml.template']},
       zip_safe=False,
       install_requires=[
       ],
