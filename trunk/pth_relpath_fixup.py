@@ -23,6 +23,9 @@ def main():
                     print 'Cannot write .egg-link file %s, skipping' % filename
                 else:
                     fixup_egg_link(filename)
+            if filename.endswith('.egg') and os.path.isfile(filename):
+                print 'WARNING: %s is installed as a zip file' % filename
+                print '         Libraries must be installed with easy_install --always-unzip'
 
 def fixup_pth_file(filename):
     lines = []

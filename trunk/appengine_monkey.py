@@ -56,3 +56,12 @@ def find_module(subname, path):
 @patch(os)
 def readlink(path):
     return path
+
+try:
+    import pkg_resources
+except ImportError:
+    pass
+else:
+    if hasattr(os, '__loader__'):
+        # This only seems to apply to the SDK
+        pkg_resources.register_loader_type(type(os.__loader__), pkg_resources.DefaultProvider)
