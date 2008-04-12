@@ -65,3 +65,5 @@ else:
     if hasattr(os, '__loader__'):
         # This only seems to apply to the SDK
         pkg_resources.register_loader_type(type(os.__loader__), pkg_resources.DefaultProvider)
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'module-replacements'))
