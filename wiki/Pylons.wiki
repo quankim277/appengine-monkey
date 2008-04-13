@@ -46,10 +46,10 @@ This will change your prompt to help you remember you are working in the virtual
 
 4. Install the packages
 
-In addition to Pylons, we'll install [http://jinja.pocoo.org/ Jinja], because currently it's one of the few templating options that work (Mako and Genshi both have issues with App Engine).
+In addition to Pylons, we'll install the trunk of Mako and Beaker.  Mako has been updated to work with App Engine in the trunk, and Beaker (the session system for Pylons) has been updated to use BigTable as a backend.
 
 {{{
-easy_install Pylons Jinja
+easy_install Mako==dev https://www.knowledgetap.com/hg/beaker/archive/tip.tar.gz Pylons
 }}}
 
 5. Create your application
@@ -59,9 +59,9 @@ cd src
 paster create --template=pylons MyApplication
 }}}
 
-6. Change templating engines
+6. If you want to use Jinja
 
-Since Mako isn't working (though fixes are in progress), we'll switch it to use Jinja.  Edit the file {{{MyApplication/myapplication/config/environment.py}}}, changing the {{{config.init_app}}} line, and adding some code:
+Another template option is Jinja.  The released version of Jinja mostly works with App Engine.  To use it first {{{easy_install Jinja}}}, then edit the file {{{MyApplication/myapplication/config/environment.py}}}, changing the {{{config.init_app}}} line, and adding some code:
 
 {{{
     # Initialize config with the basic options
@@ -106,6 +106,22 @@ You can also copy over the develoment.ini file from your new Pylons application.
 
 Currently there's no mechanism in paste-deploy.py to differentiate configuration under the SDK and configuration under the live App Engine environment.  But that should be added at some point.
 
+If you installed the Beaker trunk, you can enable sessions with:
+
+{{{
+beaker.session.type = google
+beaker.session.table_name = Session
+}}}
+
+The {{{Session}}} table is created automatically for you.
+
+You should be aware that there's two {{{development.ini}}} files, one in the root of your environment, and another in {{{src/MyApplication/development.ini}}}.  {{{paste-deploy.py}}} is set to look at the first one, so if you edit the second one it will have no effect.  You can edit that file to use the second location if you want, or change the root {{{development.ini}}} to look like:
+
+{{{
+[app:main]
+use = config:src/MyApplication/development.ini
+}}}
+
 10. Running you application
 
 Your application should be ready to run under the SDK or on App Engine itself.  To run it in the SDK:
@@ -114,7 +130,7 @@ Your application should be ready to run under the SDK or on App Engine itself.  
 /usr/bin/python2.5 dev_appserver.py my-app
 }}}
 
-Note that you should *not* use the virtualenv python to run dev_appserver.py.
+Note that you should *not* use the virtualenv python to run dev_appserver.py.  If you get an error about importing {{{site}}} then you probably started it in the virtualenv.  Note you can run {{{deactivate}}} on the shell to disable the virtualenv.  This is useful when you forget to use the right interpreter.
 
 To upload the application:
 
