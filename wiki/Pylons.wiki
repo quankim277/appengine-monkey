@@ -49,7 +49,7 @@ This will change your prompt to help you remember you are working in the virtual
 In addition to Pylons, we'll install the trunk of Mako and Beaker.  Mako has been updated to work with App Engine in the trunk, and Beaker (the session system for Pylons) has been updated to use BigTable as a backend.
 
 {{{
-easy_install Mako==dev https://www.knowledgetap.com/hg/beaker/archive/tip.tar.gz Pylons
+easy_install Mako==dev Beaker Pylons
 }}}
 
 5. Create your application
