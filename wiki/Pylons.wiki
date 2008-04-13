@@ -77,6 +77,8 @@ Since Mako isn't working (though fixes are in progress), we'll switch it to use 
         })
 }}}
 
+Also, after installing Jinja, delete {{{lib/python2.5/site-packages/Jinja-1.2-py2.5-*.egg/jinja/_speedups*}}} (to work around [http://code.google.com/p/googleappengine/issues/detail?id=156&q=jinja&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary this bug]).
+
 7. Install your application
 
 To get your application installed, run (inside the virtualenv):
