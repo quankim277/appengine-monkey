@@ -81,7 +81,7 @@ def after_install(options, home_dir):
     install_app_yaml(options, home_dir)
     if options.paste_deploy:
         install_paste_deploy(options, home_dir)
-    logger.notify('Run "%s -m pth_relpath_fixup" before deploying'
+    logger.notify('\\nRun "%s -m pth_relpath_fixup" before deploying'
                   % join(home_dir, 'bin', 'python'))
     logger.notify('Run "%s Package" to install new packages that provide builds'
                   % join(home_dir, 'bin', 'easy_install'))
@@ -123,7 +123,7 @@ def install_paste_deploy(options, home_dir):
     if os.path.exists(dest):
         logger.notify('Not overwriting development.ini')
     else:
-        shutil.copyfile(os.path.join(os.path.dirname(__file__), 'development.ini'),
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), 'development.ini.template'),
                         dest)
         msg += ' and development.ini'
     logger.notify(msg)
