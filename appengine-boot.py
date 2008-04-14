@@ -767,7 +767,7 @@ def install_paste_deploy(options, home_dir):
     if os.path.exists(dest):
         logger.notify('Not overwriting development.ini')
     else:
-        shutil.copyfile(os.path.join(os.path.dirname(__file__), 'development.ini'),
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), 'development.ini.template'),
                         dest)
         msg += ' and development.ini'
     logger.notify(msg)
