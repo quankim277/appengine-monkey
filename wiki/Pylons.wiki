@@ -1,5 +1,5 @@
 #summary How to get Pylons working on appengine
-#labels pylons,appengine
+#labels pylons,appengine,Featured
 
 = Introduction =
 
@@ -7,7 +7,7 @@ This describes the steps, using appengine-monkey, to get Pylons working on appen
 
 = Details =
 
-appengine has several modules and functions disabled which, by themselves, make it impossible to import many Pylons packages.  appengine-monkey restores many of those modules, and puts together the structure for deploying a Pylons application.  It is not closely tied to Python: any application that uses Setuptools will find this project useful (necessary) to get things functioning.
+appengine has several modules and functions disabled which, by themselves, make it impossible to import many Pylons packages.  appengine-monkey restores many of those modules, and puts together the structure for deploying a Pylons application.  It is not closely tied to Pylons: any application that uses Setuptools will find this project useful (necessary) to get things functioning.
 
 Here's the basic instructions:
 
