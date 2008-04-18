@@ -82,7 +82,21 @@ else:
         # This only seems to apply to the SDK
         pkg_resources.register_loader_type(type(os.__loader__), pkg_resources.DefaultProvider)
 
-file_dir = os.path.dirname(__file__)
-if os.path.exists(os.path.join(file_dir, 'appengine_monkey_files')):
-    file_dir = os.path.join(file_dir, 'appengine_monkey_files')
-sys.path.insert(0, os.path.join(file_dir, 'module-replacements'))
+def patch_modules():
+    file_dir = os.path.dirname(__file__)
+    if os.path.exists(os.path.join(file_dir, 'appengine_monkey_files')):
+        file_dir = os.path.join(file_dir, 'appengine_monkey_files')
+    repl_dir = os.path.join(file_dir, 'module-replacements')
+    if repl_dir not in sys.path:
+        sys.path.insert(0, repl_dir)
+    for module in ['httplib', 'subprocess', 'zipimport']:
+        if (module in sys.modules
+            and 'module-replacements' not in sys.modules[module].__file__):
+            del sys.modules[module]
+
+patch_modules()
+
+import socket
+class SocketError(Exception):
+    pass
+socket.error = SocketError
