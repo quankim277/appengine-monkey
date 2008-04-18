@@ -18,7 +18,7 @@ libraries.
       author_email='google-appengine@googlegroups.com',
       url='http://code.google.com/p/appengine-monkey/',
       license='MIT',
-      py_modules=['pth_relpath_fixup', 'appengine_monkey'],
+      py_modules=['pth_relpath_fixup', 'appengine_monkey', 'fetchapp'],
       # A horrible hack to get these files installed:
       packages=['appengine_monkey_files'],
       package_dir={'appengine_monkey_files': '.'},
