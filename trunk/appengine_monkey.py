@@ -97,6 +97,13 @@ def patch_modules():
 patch_modules()
 
 import socket
+
 class SocketError(Exception):
     pass
 socket.error = SocketError
+
+@patch(socket)
+def _fileobject(socket_obj, mode='rb', bufsize=-1, close=False):
+    ## FIXME: this is a fix for urllib2:1096, where for some reason it does this
+    ## Why?  No idea.
+    return socket_obj
