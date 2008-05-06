@@ -91,7 +91,7 @@ def patch_modules():
         sys.path.insert(0, repl_dir)
     for module in ['httplib', 'subprocess', 'zipimport']:
         if (module in sys.modules
-            and 'module-replacements' not in sys.modules[module].__file__):
+            and 'module-replacements' not in (getattr(sys.modules[module], '__file__', None) or '')):
             del sys.modules[module]
 
 patch_modules()
