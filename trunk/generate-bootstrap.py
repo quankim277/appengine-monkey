@@ -54,7 +54,7 @@ def adjust_options(options, args):
     if not args:
         return # caller will raise error
     if not options.app_name:
-        options.app_name = os.path.basename(args[0])
+        options.app_name = os.path.basename(args[0]).lower()
     options.unzip_setuptools = True
     if not options.easy_install:
         options.easy_install = []
