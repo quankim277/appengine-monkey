@@ -109,7 +109,7 @@ class HTTPResponse(object):
 
     
 
-class HTTPSConnection(object):
+class HTTPSConnection(HTTPConnection):
 
     protocol = 'https'
     default_port = HTTPS_PORT
