@@ -3,6 +3,7 @@
 CONF_FILE = 'development.ini'
 
 import sys
+import os
 if getattr(sys, 'real_prefix', None):
     # This is a sign that a virtualenv python is being used, and that causes problems
     print >> sys.stderr, (
@@ -11,7 +12,6 @@ if getattr(sys, 'real_prefix', None):
 if os.environ.get('PYTHONPATH'):
     print >> sys.stderr, (
         "$PYTHONPATH is set.  This may cause import problems; it is best to unset PYTHONPATH before starting the appserver")
-import os
 import site
 import wsgiref.handlers
 
