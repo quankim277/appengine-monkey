@@ -22,6 +22,11 @@ try:
     import appengine_monkey
     ## If you want to use httplib but get socket errors, you should uncomment this line:
     #appengine_monkey.install_httplib()
+    
+    ## This portion is the "Paste Deploy" part; it loads the application from a config file using
+    ## Paste Deploy (http://pythonpaste.org/deploy/).  If you want to load your application in a
+    ## different way (e.g., construct it in Python code) you can change these next three lines
+    ## and just make sure that `app` is your WSGI application:
     CONF_FILE = 'config:' + os.path.join(here, CONF_FILE)
     from paste.deploy import loadapp
     app = loadapp(CONF_FILE)
