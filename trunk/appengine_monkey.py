@@ -82,11 +82,22 @@ else:
         # This only seems to apply to the SDK
         pkg_resources.register_loader_type(type(os.__loader__), pkg_resources.DefaultProvider)
 
-def patch_modules():
+def get_file_dir(*parts):
     file_dir = os.path.dirname(__file__)
     if os.path.exists(os.path.join(file_dir, 'appengine_monkey_files')):
         file_dir = os.path.join(file_dir, 'appengine_monkey_files')
-    repl_dir = os.path.join(file_dir, 'module-replacements')
+    if parts:
+        file_dir = os.path.join(file_dir, *parts)
+    return file_dir
+
+def patch_modules():
+    """
+    Adds the module-replacements/ directory to the start of sys.path, and removes any modules that
+    have already been loaded that instead should be loaded from module-replacements/
+
+    (does not seem to work reliably for httplib -- see install_httplib())
+    """
+    repl_dir = get_file_dir('module-replacements')
     if repl_dir not in sys.path:
         sys.path.insert(0, repl_dir)
     for module in ['httplib', 'subprocess', 'zipimport']:
@@ -95,6 +106,17 @@ def patch_modules():
             del sys.modules[module]
 
 patch_modules()
+
+def install_httplib():
+    """
+    Imports and patches the system httplib.
+
+    Unlike patch_modules(), this imports the existing httplib and patches it in place.  This
+    seems to be more reliable than modifying sys.path
+    """
+    path_to_patched_httplib = get_file_dir('module-replacements', 'httplib.py')
+    import httplib
+    execfile(path_to_patched_httplib, httplib.__dict__)
 
 import socket
 
