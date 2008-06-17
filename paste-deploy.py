@@ -20,6 +20,8 @@ try:
     site_packages = os.path.join(here, 'lib', 'python2.5', 'site-packages')
     site.addsitedir(site_packages)
     import appengine_monkey
+    ## If you want to use httplib but get socket errors, you should uncomment this line:
+    #appengine_monkey.install_httplib()
     CONF_FILE = 'config:' + os.path.join(here, CONF_FILE)
     from paste.deploy import loadapp
     app = loadapp(CONF_FILE)
