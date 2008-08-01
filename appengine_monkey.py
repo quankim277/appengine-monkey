@@ -12,7 +12,13 @@ class Missing(object):
 
 def patch(module):
     def decorate(func):
+        old_func = getattr(module, func.func_name, None)
+        if getattr(old_func, 'patched', False):
+            # This is a sign something is being re-patched
+            return old_func
         setattr(module, func.func_name, func)
+        func.orig_function = old_func
+        func.patched = True
         return func
     return decorate
 
@@ -52,6 +58,10 @@ def find_module(subname, path):
             if os.path.exists(full):
                 return open(full), full, None
     return None, '', None
+
+@patch(imp)
+def get_magic():
+   return '\xb3\xf2\r\n'
 
 @patch(os)
 def readlink(path):
