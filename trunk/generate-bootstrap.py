@@ -71,8 +71,12 @@ def after_install(options, home_dir):
     logger.indent += 2
     fixup_distutils_cfg(options, home_dir)
     try:
+        if sys.platform=="win32":
+            script_dir = "Scripts"
+        else:
+            script_dir = "bin"
         packages = [os.path.dirname(os.path.abspath(__file__))] + list(options.easy_install)
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install'))] + packages,
+        call_subprocess([os.path.abspath(join(home_dir, script_dir, 'easy_install'))] + packages,
                         cwd=home_dir,
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
@@ -85,9 +89,13 @@ def after_install(options, home_dir):
                   % join(home_dir, 'bin', 'python'))
     logger.notify('Run "%s Package" to install new packages that provide builds'
                   % join(home_dir, 'bin', 'easy_install'))
-    
+
 def fixup_distutils_cfg(options, home_dir):
-    distutils_cfg = os.path.join(home_dir, 'lib', 'python%s' % sys.version[:3], 'distutils', 'distutils.cfg')
+    if sys.platform=="win32":
+        distutils_path = os.path.join(home_dir, 'lib', 'distutils')
+    else:
+        distutils_path = os.path.join(home_dir, 'lib', 'python%s' % sys.version[:3], 'distutils')
+    distutils_cfg = os.path.join(distutils_path, 'distutils.cfg')
     if os.path.exists(distutils_cfg):
         f = open(distutils_cfg)
         c = f.read()
@@ -114,7 +122,7 @@ def install_app_yaml(options, home_dir):
     f = open(dest, 'wb')
     f.write(c)
     f.close()
-    
+
 def install_paste_deploy(options, home_dir):
     shutil.copyfile(os.path.join(os.path.dirname(__file__), 'paste-deploy.py'),
                     os.path.join(home_dir, 'paste-deploy.py'))
