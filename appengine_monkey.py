@@ -110,7 +110,7 @@ def patch_modules():
     repl_dir = get_file_dir('module-replacements')
     if repl_dir not in sys.path:
         sys.path.insert(0, repl_dir)
-    for module in ['httplib', 'subprocess', 'zipimport']:
+    for module in ['httplib', 'subprocess', 'zipimport', 'cookielib', 'urllib', 'urllib2']:
         if (module in sys.modules
             and 'module-replacements' not in (getattr(sys.modules[module], '__file__', None) or '')):
             del sys.modules[module]
@@ -124,6 +124,11 @@ def install_httplib():
     Unlike patch_modules(), this imports the existing httplib and patches it in place.  This
     seems to be more reliable than modifying sys.path
     """
+    # make extra sure some modules get the updated objects:
+    for module in ['cookielib', 'urllib', 'urllib2']:
+        if (module in sys.modules
+            and 'module-replacements' not in (getattr(sys.modules[module], '__file__', None) or '')):
+            del sys.modules[module]
     path_to_patched_httplib = get_file_dir('module-replacements', 'httplib.py')
     import httplib
     execfile(path_to_patched_httplib, httplib.__dict__)
