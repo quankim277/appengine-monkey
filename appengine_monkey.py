@@ -63,6 +63,11 @@ def find_module(subname, path):
 def get_magic():
    return '\xb3\xf2\r\n'
 
+@patch(imp)
+def load_dynamic(filename):
+    # On GAE you can't load .so files, so this always just fails
+    raise ImportError('You cannot import a dynamic library')
+
 @patch(os)
 def readlink(path):
     return path
