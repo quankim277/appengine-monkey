@@ -247,7 +247,10 @@ def make_exe(fn):
 
 def install_setuptools(py_executable, unzip=False):
     setup_fn = 'setuptools-0.6c9-py%s.egg' % sys.version[:3]
-    setup_fn = join(os.path.dirname(__file__), 'support-files', setup_fn)
+    for dir in ['.', os.path.dirname(__file__), join(os.path.dirname(__file__), 'support-files')]:
+        if os.path.exists(join(dir, setup_fn)):
+            setup_fn = join(dir, setup_fn)
+            break
     if is_jython and os._name == 'nt':
         # Jython's .bat sys.executable can't handle a command line
         # argument with newlines
@@ -394,6 +397,13 @@ def main():
         logger.fatal('ERROR: you cannot run virtualenv while in a workingenv')
         logger.fatal('Please deactivate your workingenv, then re-run this script')
         sys.exit(3)
+
+    if os.environ.get('PYTHONHOME'):
+        if sys.platform == 'win32':
+            name = '%PYTHONHOME%'
+        else:
+            name = '$PYTHONHOME'
+        logger.warn('%s is set; this can cause problems creating environments' % name)
 
     if options.relocatable:
         make_environment_relocatable(home_dir)
@@ -690,7 +700,8 @@ def install_distutils(lib_dir, home_dir):
     ## FIXME: maybe this prefix setting should only be put in place if
     ## there's a local distutils.cfg with a prefix setting?
     home_dir = os.path.abspath(home_dir)
-    distutils_cfg = DISTUTILS_CFG + "\n[install]\nprefix=%s\n" % home_dir
+    ## FIXME: this is breaking things, removing for now:
+    #distutils_cfg = DISTUTILS_CFG + "\n[install]\nprefix=%s\n" % home_dir
     writefile(os.path.join(distutils_path, '__init__.py'), DISTUTILS_INIT)
     writefile(os.path.join(distutils_path, 'distutils.cfg'), distutils_cfg, overwrite=False)
 
@@ -1009,7 +1020,7 @@ def install_app_yaml(options, home_dir):
     f.close()
 
 def install_runner(options, home_dir):
-    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'gae-runner.py'),
+    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'homedir-runner.py'),
                     os.path.join(home_dir, 'app', 'runner.py'))
     conf = os.path.join(home_dir, 'app', 'config.py')
     if not os.path.exists(conf):
