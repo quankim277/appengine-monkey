@@ -30,8 +30,11 @@ os.open = Missing('os.open')
 
 def can_access(path):
     try:
-        os.listdir(path)
-        return True
+        if os.path.isdir(path):
+            os.listdir(path)
+            return True
+        elif os.path.exists(path):
+            return True
     except OSError:
         return False
 
