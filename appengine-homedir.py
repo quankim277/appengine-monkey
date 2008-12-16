@@ -247,7 +247,16 @@ def make_exe(fn):
 
 def install_setuptools(py_executable, unzip=False):
     setup_fn = 'setuptools-0.6c9-py%s.egg' % sys.version[:3]
-    for dir in ['.', os.path.dirname(__file__), join(os.path.dirname(__file__), 'support-files')]:
+    search_dirs = ['.', os.path.dirname(__file__), join(os.path.dirname(__file__), 'support-files')]
+    if os.path.splitext(os.path.dirname(__file__))[0] != 'virtualenv':
+        # Probably some boot script; just in case virtualenv is installed...
+        try:
+            import virtualenv
+        except ImportError:
+            pass
+        else:
+            search_dirs.append(os.path.join(os.path.dirname(virtualenv.__file__), 'support-files'))
+    for dir in search_dirs:
         if os.path.exists(join(dir, setup_fn)):
             setup_fn = join(dir, setup_fn)
             break
@@ -703,7 +712,7 @@ def install_distutils(lib_dir, home_dir):
     ## FIXME: this is breaking things, removing for now:
     #distutils_cfg = DISTUTILS_CFG + "\n[install]\nprefix=%s\n" % home_dir
     writefile(os.path.join(distutils_path, '__init__.py'), DISTUTILS_INIT)
-    writefile(os.path.join(distutils_path, 'distutils.cfg'), distutils_cfg, overwrite=False)
+    writefile(os.path.join(distutils_path, 'distutils.cfg'), DISTUTILS_CFG, overwrite=False)
 
 def fix_lib64(lib_dir):
     """
@@ -948,6 +957,11 @@ if sys.version[:3] != '2.5':
 
 def extend_parser(parser):
     parser.add_option(
+        '-g', '--gae',
+        dest='gae_location',
+        metavar='GOOGLE_APPENGINE_DIR',
+        help='The location where the GAE SDK is located')
+    parser.add_option(
         '--app-name',
         dest='app_name',
         metavar='APP_NAME',
@@ -962,6 +976,7 @@ def extend_parser(parser):
         metavar='FILENAME',
         default=os.path.join(os.path.dirname(__file__), 'app.yaml.template'),
         help='File to use as the basis for app.yaml (default %default)')
+    parser.remove_option('--no-site-packages')
 
 def adjust_options(options, args):
     if not args:
@@ -971,23 +986,41 @@ def adjust_options(options, args):
     if not options.package:
         options.package = options.app_name
     options.unzip_setuptools = True
+    options.no_site_packages = True
+    if not options.gae_location:
+        print >> sys.stderr, (
+            "You must provide the --gae option")
+        sys.exit(2)
 
 def after_install(options, home_dir):
     mkdir(join(home_dir, 'app'))
+    logger.notify('Installing pip')
     logger.indent += 2
     try:
         if sys.platform == 'win32':
             script_dir = 'Scripts'
         else:
             script_dir = 'bin'
-        call_subprocess([os.path.abspath(join(home_dir, script_dir, 'easy_install')), 'pip'])
+        call_subprocess([os.path.abspath(join(home_dir, script_dir, 'easy_install')), 'pip'],
+                        filter_stdout=filter_ez_setup)
     finally:
         logger.indent -= 2
-    fixup_distutils_cfg(options, home_dir)
-    install_app_yaml(options, home_dir)
-    install_runner(options, home_dir)
-    install_package(options, home_dir)
+    logger.notify('Setting up appengine structure')
+    logger.indent += 2
+    try:
+        fixup_distutils_cfg(options, home_dir)
+        install_app_yaml(options, home_dir)
+        install_runner(options, home_dir)
+        install_package(options, home_dir)
+        install_sitecustomize(options, home_dir)
+    finally:
+        logger.indent -= 2
+    logger.notify('')
     logger.notify('Run "pip install Package" to install new packages')
+    logger.notify('To get access to your application from the command-line:')
+    logger.notify('%s/bin/python' % home_dir)
+    logger.notify('>>> import runner')
+    logger.notify('>>> application = runner.application')
 
 def fixup_distutils_cfg(options, home_dir):
     if sys.platform=="win32":
@@ -1018,10 +1051,12 @@ def install_app_yaml(options, home_dir):
     f = open(dest, 'wb')
     f.write(c)
     f.close()
+    logger.info('Wrote %s' % dest)
 
 def install_runner(options, home_dir):
     shutil.copyfile(os.path.join(os.path.dirname(__file__), 'homedir-runner.py'),
                     os.path.join(home_dir, 'app', 'runner.py'))
+    logger.info('Created standard runner.py')
     conf = os.path.join(home_dir, 'app', 'config.py')
     if not os.path.exists(conf):
         f = open(conf, 'w')
@@ -1034,6 +1069,7 @@ DEV_APP_KWARGS = APP_KWARGS
 REMOVE_SYSTEM_LIBRARIES = ['webob']
 ''' % options.package)
         f.close()
+        logger.info('Wrote config to %s' % conf)
     else:
         logger.warn('%s already exists, not overwriting' % conf)
 
@@ -1054,7 +1090,82 @@ def install_package(options, home_dir):
     return application
 ''')
         f.close()
+        logger.info('Created hello-world app in %s' % pkg_dir)
 
+def install_sitecustomize(options, home_dir):
+    if sys.platform == 'win32':
+        pkg_dir = os.path.join(home_dir, 'Lib')
+        rel_home = '../'
+    else:
+        pkg_dir = os.path.join(home_dir, 'lib', 'python%s' % sys.version[:3])
+        rel_home = '../../'
+    sitecustomize = os.path.join(pkg_dir, 'sitecustomize.py')
+    f = open(sitecustomize, 'w')
+    f.write('''import tempfile, os, site, sys
+home = os.path.normpath(os.path.join(os.path.dirname(__file__), __REL_HOME__))
+app_path = os.path.join(home, 'app')
+if app_path not in sys.path:
+    sys.path.append(app_path)
+
+def activate_gae(location):
+    if location not in sys.path:
+        sys.path.append(location)
+    for path in 'lib/yaml/lib', 'lib/webob', 'lib/django':
+        path = os.path.join(location, path)
+        if path not in sys.path:
+            sys.path.append(path)
+    from google.appengine.tools import dev_appserver
+    from google.appengine.tools.dev_appserver_main import         DEFAULT_ARGS, ARG_CLEAR_DATASTORE, ARG_LOG_LEVEL,         ARG_DATASTORE_PATH, ARG_HISTORY_PATH
+    app_dir = os.path.join(home, 'app')
+    gae_opts = DEFAULT_ARGS.copy()
+    gae_opts[ARG_CLEAR_DATASTORE] = False
+    gae_opts[ARG_DATASTORE_PATH] = os.path.join(tempfile.gettempdir(), 'wikistorage.datastore')
+    gae_opts[ARG_HISTORY_PATH] = os.path.join(tempfile.gettempdir(), 'wikistorage.history')
+    config = dev_appserver.LoadAppConfig(app_dir, {})[0]
+    dev_appserver.SetupStubs(config.application, **gae_opts)
+    if not os.environ.get('APPLICATION_ID'):
+        ## FIXME: should come up with a proper name:
+        os.environ['APPLICATION_ID'] = 'miscapp'
+    if not os.environ.get('SERVER_SOFTWARE'):
+        os.environ['SERVER_SOFTWARE'] = 'Development/interactive'
+    sys.path.append(home)
+    import runner
+
+try:
+    import google
+    gae_location = os.path.dirname(google.__file__)
+except ImportError:
+    gae_location_fn = os.path.join(home, 'gae-location.txt')
+    fp = open(gae_location_fn)
+    gae_location = [line for line in fp.readlines()
+                    if line.strip() and not line.strip().startswith('#')]
+    if not gae_location or not os.path.exists(gae_location[0].strip()):
+        print >> sys.stderr, (
+            "File %s doesn't contain a valid path" % gae_location_fn)
+        gae_location = None
+    else:
+        gae_location = gae_location[0].strip()
+if gae_location:
+    activate_gae(gae_location)
+'''.replace('__REL_HOME__', repr(rel_home)))
+    logger.info('Wrote GAE initialization in %s' % sitecustomize)
+
+    fp = open(os.path.join(home_dir, 'gae-location.txt'), 'w')
+    fp.write('''# This file contains the path to the GAE SDK:
+%s
+''' % options.gae_location)
+    logger.info('Wrote SDK location (%s) to gae-location.txt' % options.gae_location)
+
+    try:
+        import Image
+    except ImportError:
+        logger.warn('Cannot find PIL')
+    else:
+        pil_pth = os.path.join(pkg_dir, 'site-packages', 'pil.pth')
+        f = open(pil_pth, 'w')
+        f.write(os.path.dirname(Image.__file__) + '\n')
+        f.close()
+        logger.info('Wrote PIL location to %s' % pil_pth)
 
 
 ##file site.py
