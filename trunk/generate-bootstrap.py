@@ -8,7 +8,7 @@ import re
 
 here = os.path.dirname(os.path.abspath(__file__))
 script_name = os.path.join(here, 'appengine-boot.py')
-gae_script_name = os.path.join(here, 'appengine-gae.py')
+gae_script_name = os.path.join(here, 'appengine-homedir.py')
 
 import virtualenv
 
@@ -231,7 +231,7 @@ def install_app_yaml(options, home_dir):
     f.close()
 
 def install_runner(options, home_dir):
-    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'gae-runner.py'),
+    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'homedir-runner.py'),
                     os.path.join(home_dir, 'app', 'runner.py'))
     conf = os.path.join(home_dir, 'app', 'config.py')
     if not os.path.exists(conf):
