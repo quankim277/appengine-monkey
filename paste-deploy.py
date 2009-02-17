@@ -14,7 +14,6 @@ if os.environ.get('PYTHONPATH'):
         "$PYTHONPATH is set.  This may cause import problems; it is best to unset PYTHONPATH before starting the appserver")
 
 import site
-site = reload(site)
 import wsgiref.handlers
 
 try:
