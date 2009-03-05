@@ -217,7 +217,7 @@ def after_install(options, home_dir):
     finally:
         logger.indent -= 2
     logger.notify('')
-    logger.notify('Run "pip install Package" to install new packages')
+    logger.notify('Run "%s/bin/pip install Package" to install new packages' % home_dir)
     logger.notify('To get access to your application from the command-line:')
     logger.notify('%s/bin/python' % home_dir)
     logger.notify('>>> import runner')
@@ -346,12 +346,13 @@ except ImportError:
     fp = open(gae_location_fn)
     gae_location = [line for line in fp.readlines()
                     if line.strip() and not line.strip().startswith('#')]
-    if not gae_location or not os.path.exists(gae_location[0].strip()):
+    if gae_location:
+        gae_location = gae_location[0].strip()
+        gae_location = os.path.expandvars(os.path.expanduser(gae_location))
+    if not gae_location or not os.path.exists(gae_location):
         print >> sys.stderr, (
             "File %s doesn't contain a valid path" % gae_location_fn)
         gae_location = None
-    else:
-        gae_location = gae_location[0].strip()
 if gae_location:
     activate_gae(gae_location)
 '''.replace('__REL_HOME__', repr(rel_home)))
