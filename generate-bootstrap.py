@@ -311,11 +311,14 @@ home = os.path.normpath(os.path.join(os.path.dirname(__file__), __REL_HOME__))
 app_path = os.path.join(home, 'app')
 if app_path not in sys.path:
     sys.path.append(app_path)
+lib_path = os.path.join(app_path, 'lib', 'python')
+if lib_path not in sys.path:
+    site.addsitedir(lib_path)
 
 def activate_gae(location):
     if location not in sys.path:
         sys.path.append(location)
-    for path in 'lib/yaml/lib', 'lib/webob', 'lib/django':
+    for path in '../lib/yaml/lib', '../lib/webob', '../lib/django':
         path = os.path.join(location, path)
         if path not in sys.path:
             sys.path.append(path)
@@ -323,19 +326,17 @@ def activate_gae(location):
     from google.appengine.tools.dev_appserver_main import \
         DEFAULT_ARGS, ARG_CLEAR_DATASTORE, ARG_LOG_LEVEL, \
         ARG_DATASTORE_PATH, ARG_HISTORY_PATH
-    app_dir = os.path.join(home, 'app')
     gae_opts = DEFAULT_ARGS.copy()
     gae_opts[ARG_CLEAR_DATASTORE] = False
     gae_opts[ARG_DATASTORE_PATH] = os.path.join(tempfile.gettempdir(), 'wikistorage.datastore')
     gae_opts[ARG_HISTORY_PATH] = os.path.join(tempfile.gettempdir(), 'wikistorage.history')
-    config = dev_appserver.LoadAppConfig(app_dir, {})[0]
+    config = dev_appserver.LoadAppConfig(app_path, {})[0]
     dev_appserver.SetupStubs(config.application, **gae_opts)
     if not os.environ.get('APPLICATION_ID'):
         ## FIXME: should come up with a proper name:
         os.environ['APPLICATION_ID'] = 'miscapp'
     if not os.environ.get('SERVER_SOFTWARE'):
         os.environ['SERVER_SOFTWARE'] = 'Development/interactive'
-    sys.path.append(home)
     import runner
 
 try:
