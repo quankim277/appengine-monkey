@@ -11,7 +11,7 @@ This is an updated guide to setting up a Pylons environment on appengine.  This 
 
 Here's the basic instructions:
 
-1. Acquire the code
+== 1. Acquire the code ==
 
 Check out the source code for appengine-monkey, like:
 
@@ -19,7 +19,7 @@ Check out the source code for appengine-monkey, like:
 svn checkout http://appengine-monkey.googlecode.com/svn/trunk/ appengine-monkey
 }}}
 
-2. Create an environment for your code
+== 2. Create an environment for your code ==
 
 This will create a [http://pypi.python.org/pypi/virtualenv virtualenv] environment ready for your application:
 
@@ -31,7 +31,7 @@ Note that {{{<google_path>}}} should be the path where you have unpacked the app
 
 This will set up an environment in {{{MyApp/}}}, with some tools installed in {{{MyApp/bin}}}.  There will also be a directory {{{MyApp/app}}} which is the directory you would upload to appengine.  You may want to edit {{{MyApp/app/app.yaml}}} to change the application ID.
 
-3. Start installing things, like Pylons
+== 3. Start installing things, like Pylons ==
 
 This virtualenv environment has been setup to install packages into {{{MyApp/app/lib/python}}}.  You can install packages like this:
 
@@ -44,7 +44,7 @@ Note that the [http://pip.openplans.org/ pip installer] (a replacement for easy_
 
 The current Pylons release, and its component libraries (e.g., Beaker, Mako) all work with appengine.  (When appengine first came out, you'd have to install the development versions of several libraries.  This is no longer the case.)
 
-5. Create your application
+== 4. Create your application ==
 
 We'll use the standard way to create an application, but we'll have to move some files around when we are done.
 
@@ -64,7 +64,7 @@ $ rm -r MyApp
 
 The appengine-monkey pattern does not use Setuptools or [http://pythonpaste.org/deploy/ Paste Deploy] for the configuration.  Instead the application is instantiated directly, using {{{MyApp/app/runner.py}}}, with parameters located in {{{MyApp/app/config.py}}}.
 
-6. Edit environment.py
+== 5. Edit environment.py ==
 
 In {{{MyApp/app/myapp/config/environment.py}}} find this line and remove it:
 
@@ -72,7 +72,7 @@ In {{{MyApp/app/myapp/config/environment.py}}} find this line and remove it:
         module_directory=os.path.join(app_conf['cache_dir'], 'templates'),
 }}}
 
-7. Edit config.py
+== 6. Edit config.py ==
 
 Put this in {{{MyApp/app/config.py}}}:
 
@@ -93,7 +93,7 @@ Note that {{{APP_NAME}}} has to be updated with the module name of your applicat
 
 The {{{REMOVE_SYSTEM_LIBRARIES}}} value will cause {{{runner.py}}} to remove some appengine-provided libraries at runtime, so you can use your own versions of the libraries.  [http://pythonpaste.org/webob/ WebOb] specifically has a newer version out that Pylons uses.  You could also put {{{'django'}}} here to disable Django, or disable yaml.
 
-10. Running you application
+== 7. Running you application ==
 
 Your application should be ready to run under the SDK or on App Engine itself.  To run it in the SDK:
 
@@ -113,7 +113,7 @@ If you have many libraries you might find that you hit a [http://code.google.com
 
 Sometimes failures will be intermittent.  If it fails, try again.
 
-11. Looking at the system interactively
+== 8. Looking at the system interactively ==
 
 In addition to running your application, you can run code in the Google environment, importing your code, and interacting with models.  If you run {{{MyApp/bin/python}}} the environment will get setup.  (You'll notice you will constantly get warnings about this setup, advice on how to suppress those without suppressing all warnings would be appreciated.)
 
@@ -131,7 +131,7 @@ $ MyApp/bin/python
 
 This will show you the response you get from fetching the root page (including headers and status).  There are many methods to help you test your application in this context.  {{{runner.application}}} is the WSGI application that is run, and in this example {{{app}}} is a handy wrapper for that application.
 
-12. Making the system more compact (getting around the 1000 file limit)
+== 9. Making the system more compact (getting around the 1000 file limit) ==
 
 If you are encountering problems getting your system under the maximum number of files, there are two tools to help.
 
