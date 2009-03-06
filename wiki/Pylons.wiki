@@ -7,7 +7,7 @@ This describes the steps, using appengine-monkey, to get Pylons working on appen
 
 = Details =
 
-appengine has several modules and functions disabled which, by themselves, make it impossible to import many Pylons packages.  appengine-monkey restores many of those modules, and puts together the structure for deploying a Pylons application.  It is not closely tied to Pylons: any application that uses Setuptools will find this project useful (necessary) to get things functioning.
+This is an updated guide to setting up a Pylons environment on appengine.  This is based on the [http://appengine-monkey.googlecode.com/svn/trunk/docs/pylons.txt testable guide]; that guide is a little hard to read, but can be used to confirm (or deny) that this process works.
 
 Here's the basic instructions:
 
@@ -19,127 +19,142 @@ Check out the source code for appengine-monkey, like:
 svn checkout http://appengine-monkey.googlecode.com/svn/trunk/ appengine-monkey
 }}}
 
-2. Set up a new virtualenv-based sandbox.  
+2. Create an environment for your code
 
-The option {{{--paste-deploy}}} tells it to write in the files for doing a [http://pythonpaste.org/deploy/ Paste Deploy] based application.  This reads a configuration file ({{{development.ini}}}) to load up the application, and sets up the CGI runner to send a request to that application.
-
-Note that all applications need a unique name that you registered ahead of time with Google App Engine.  This name goes in your {{{app.yaml}}} file.  If you don't give {{{--app-name=a-name}}} then it will assume that the name of the directory you are using is the name of the application ({{{my-app}}} in the example):
+This will create a [http://pypi.python.org/pypi/virtualenv virtualenv] environment ready for your application:
 
 {{{
-python2.5 appengine-boot.py --paste-deploy my-app
+$ python2.5 appengine-homedir.py --gae <google_path> MyApp
 }}}
 
-You can put that anywhere, you don't have to put it under the appengine-monkey directory that you checked out.
+Note that {{{<google_path>}}} should be the path where you have unpacked the appengine SDK.
 
-3. Start using your virtualenv
+This will set up an environment in {{{MyApp/}}}, with some tools installed in {{{MyApp/bin}}}.  There will also be a directory {{{MyApp/app}}} which is the directory you would upload to appengine.  You may want to edit {{{MyApp/app/app.yaml}}} to change the application ID.
 
-You can use this virtualenv just like any other.  If you use {{{--paste-deploy}}}, the {{{paste-deploy.py}}} file will load up the libraries in the virtualenv.  Otherwise look at [http://appengine-monkey.googlecode.com/svn/trunk/paste-deploy.py paste-deploy.py] to get an idea of how to activate it.
+3. Start installing things, like Pylons
 
-To use a virtualenv for installing libraries and managing your project, do:
+This virtualenv environment has been setup to install packages into {{{MyApp/app/lib/python}}}.  You can install packages like this:
 
 {{{
-cd my-app
-source bin/activate
+$ cd MyApp
+$ ./bin/pip install Pylons
 }}}
 
-This will change your prompt to help you remember you are working in the virtualenv, and commands you run will effect the virtualenv.  
+Note that the [http://pip.openplans.org/ pip installer] (a replacement for easy_install) is in {{{MyApp/bin}}}, but other scripts (like {{{paster}}}) will be in {{{MyApp/app/bin}}}.
 
-4. Install the packages
-
-In addition to Pylons, we'll install the trunk of Mako and Beaker.  Mako has been updated to work with App Engine in the trunk, and Beaker (the session system for Pylons) has been updated to use BigTable as a backend.
-
-{{{
-easy_install Mako==dev Beaker Pylons
-}}}
+The current Pylons release, and its component libraries (e.g., Beaker, Mako) all work with appengine.  (When appengine first came out, you'd have to install the development versions of several libraries.  This is no longer the case.)
 
 5. Create your application
 
-{{{
-cd src
-paster create --template=pylons MyApplication
-}}}
-
-6. If you want to use Jinja
-
-Another template option is Jinja.  The released version of Jinja mostly works with App Engine.  To use it first {{{easy_install Jinja}}}, then edit the file {{{MyApplication/myapplication/config/environment.py}}}, changing the {{{config.init_app}}} line, and adding some code:
+We'll use the standard way to create an application, but we'll have to move some files around when we are done.
 
 {{{
-    # Initialize config with the basic options
-    config.init_app(global_conf, app_conf, package='myapplication',
-                    template_engine='jinja', paths=paths)
-
-
-    config.add_template_engine(
-        'jinja', '', {
-            'jinja.package':            'testapp',
-            'jinja.package_path':       'templates',
-            'jinja.use_memcache':       False,
-        })
+$ cd MyApp/app
+# Delete the old Hello World application:
+$ rm -r myapp
+$ paster create --template=pylons MyApp sqlalchemy=false
 }}}
 
-Also, after installing Jinja, delete {{{lib/python2.5/site-packages/Jinja-1.2-py2.5-*.egg/jinja/_speedups*}}} (to work around [http://code.google.com/p/googleappengine/issues/detail?id=156&q=jinja&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary this bug]).
-
-7. Install your application
-
-To get your application installed, run (inside the virtualenv):
+You will choose your template engine.  Mako works fine.  Then some files have to be moved around:
 
 {{{
-cd my-app/src/MyApplication
-python setup.py develop
+$ mv MyApp/myapp .
+$ rm -r MyApp
 }}}
 
-8. Fix up your paths
+The appengine-monkey pattern does not use Setuptools or [http://pythonpaste.org/deploy/ Paste Deploy] for the configuration.  Instead the application is instantiated directly, using {{{MyApp/app/runner.py}}}, with parameters located in {{{MyApp/app/config.py}}}.
 
-Because your file locations will change when you upload them, all your paths in the environment have to be relative.  There's some paths created for you when you ran {{{python setup.py develop}}}, so you have to run this script to fix them (and re-run it anytime you call that again).  Again in the virtualenv, run:
+6. Edit environment.py
+
+In {{{MyApp/app/myapp/config/environment.py}}} find this line and remove it:
 
 {{{
-python -m pth_relpath_fixup
+        module_directory=os.path.join(app_conf['cache_dir'], 'templates'),
 }}}
 
-This will also give you a warning if there are any eggs installed as zip-files (the virtualenv should have configured easy_install not to do this, but it checks just in case that didn't work).  appengine currently does not support zipped packages.
+7. Edit config.py
 
-9. Edit development.ini
-
-At least you should edit development.ini to change the line {{{egg:MyApplication}}} to match your application name.  You can add other configuration as well in this file to control your application.
-
-You can also copy over the develoment.ini file from your new Pylons application.
-
-Currently there's no mechanism in paste-deploy.py to differentiate configuration under the SDK and configuration under the live App Engine environment.  But that should be added at some point.
-
-If you installed the Beaker trunk, you can enable sessions with:
+Put this in {{{MyApp/app/config.py}}}:
 
 {{{
-beaker.session.type = google
-beaker.session.table_name = Session
+APP_NAME = 'myapp.config.middleware:make_app'
+APP_ARGS = ({},)
+APP_KWARGS = dict()
+APP_KWARGS.update({'beaker.session.type': 'google', 'beaker.session.table_name': 'beaker_session',
+                   'beaker.session.key': 'pylonstestapp', 'beaker.session.secret': 'secret',
+                   'beaker.cache.type': 'google', 'beaker.cache.table_name': 'beaker_cache'})
+# You can overwrite these separately for different dev/live settings:
+DEV_APP_ARGS = APP_ARGS
+DEV_APP_KWARGS = APP_KWARGS
+REMOVE_SYSTEM_LIBRARIES = ['webob']
 }}}
 
-The {{{Session}}} table is created automatically for you.
+Note that {{{APP_NAME}}} has to be updated with the module name of your application ({{{myapp}}} in this example).  The beaker.* options are all standard for appengine.  You could include other options specific to your application in {{{APP_KWARGS}}}.
 
-You should be aware that there's two {{{development.ini}}} files, one in the root of your environment, and another in {{{src/MyApplication/development.ini}}}.  {{{paste-deploy.py}}} is set to look at the first one, so if you edit the second one it will have no effect.  You can edit that file to use the second location if you want, or change the root {{{development.ini}}} to look like:
-
-{{{
-[app:main]
-use = config:src/MyApplication/development.ini
-}}}
+The {{{REMOVE_SYSTEM_LIBRARIES}}} value will cause {{{runner.py}}} to remove some appengine-provided libraries at runtime, so you can use your own versions of the libraries.  [http://pythonpaste.org/webob/ WebOb] specifically has a newer version out that Pylons uses.  You could also put {{{'django'}}} here to disable Django, or disable yaml.
 
 10. Running you application
 
 Your application should be ready to run under the SDK or on App Engine itself.  To run it in the SDK:
 
 {{{
-/usr/bin/python2.5 dev_appserver.py my-app
+/usr/bin/python2.5 dev_appserver.py MyApp/app/
 }}}
 
-Note that you should *not* use the virtualenv python to run dev_appserver.py.  If you get an error about importing {{{site}}} then you probably started it in the virtualenv.  Note you can run {{{deactivate}}} on the shell to disable the virtualenv.  This is useful when you forget to use the right interpreter.
+Note that you should *not* use the virtualenv python {{{MyApp/bin/python}}} to run dev_appserver.py.  If you get an error about importing {{{site}}} then you probably started it in the virtualenv.  Note you can run {{{deactivate}}} on the shell to disable the virtualenv (if you used {{{source bin/activate}}}).
 
 To upload the application:
 
 {{{
-/usr/bin/python2.5 appcfg.py update my-app
+/usr/bin/python2.5 appcfg.py update MyApp/app
 }}}
 
-If you have many libraries you might find that you hit a [http://code.google.com/p/googleappengine/issues/detail?id=161&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary 1000 file limit].  This limit is stupid; please go star that ticket to learn when it will go away.  Sometimes unnecessary packages will be in {{{my-app/lib/python2.5/site-packages}}}, which you can delete to get under 1000 files.
+If you have many libraries you might find that you hit a [http://code.google.com/p/googleappengine/issues/detail?id=161&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary 1000 file limit].  This limit has been improved so that static and code files don't share the same limit, but it's still problematic.  Please go star that ticket to learn when it will go away, and to indicate that you want Google to raise the limit to something less limiting (at 10,000 files probably everyone will be happy).  Sometimes unnecessary packages will be in {{{my-app/lib/python2.5/site-packages}}}, which you can delete to get under 1000 files.
 
 Sometimes failures will be intermittent.  If it fails, try again.
 
-You should get a lot of warnings about files that are too big.  This is okay.  These files would ideally be skipped with skip_files in app.yaml, but [http://code.google.com/p/googleappengine/issues/detail?id=80&q=reporter:ianbicking&colspec=ID%20Type%20Status%20Priority%20Stars%20Owner%20Summary I haven't figured it out yet].
+11. Looking at the system interactively
+
+In addition to running your application, you can run code in the Google environment, importing your code, and interacting with models.  If you run {{{MyApp/bin/python}}} the environment will get setup.  (You'll notice you will constantly get warnings about this setup, advice on how to suppress those without suppressing all warnings would be appreciated.)
+
+One thing you can do is use this for testing.  The package that Pylons uses, [http://pythonpaste.org/webtest/ WebTest], can be used for any system (Django, web.py, etc).  Using it looks like this:
+
+{{{
+# If you haven't installed Pylons or WebTest:
+$ MyApp/bin/pip install WebTest
+$ MyApp/bin/python
+>>> import webtest
+>>> from runner import application
+>>> app = webtest.TestApp(application)
+>>> print app.get('/')
+}}}
+
+This will show you the response you get from fetching the root page (including headers and status).  There are many methods to help you test your application in this context.  {{{runner.application}}} is the WSGI application that is run, and in this example {{{app}}} is a handy wrapper for that application.
+
+12. Making the system more compact (getting around the 1000 file limit)
+
+If you are encountering problems getting your system under the maximum number of files, there are two tools to help.
+
+The first is in appengine_monkey, [http://appengine-monkey.googlecode.com/svn/trunk/appengine_count_skip.py appengine_count_skip.py].  You can run this like:
+
+{{{
+$ cd MyApp/app
+$ ../bin/python /path/to/appengine_count_skip.py
+}}}
+
+This will show you a long summary of all the files in your application, and if they are or are not skipped using the {{{skip_files}}} setting in {{{app.yaml}}}.  If you don't have a skip_files setting the output will appear to indicate everything is skipped.  Note that this is somewhat limited, as there's actually just one gigantic regular expression, and this script tries to split the regex on newlines and interpret each item as an individual regex; you might have to edit the expression to make this work.
+
+Another tool is in pip, which will show you packages and let you zip and unzip packages.  To see your packages:
+
+{{{
+$ cd MyApp/
+$ ./bin/pip zip -l
+}}}
+
+You can see your zipped packages (by default, none) and your unzipped packages.  You can zip a package with:
+
+{{{
+$ ./bin/pip zip mako
+}}}
+
+Use {{{pip unzip}}} to undo this.
