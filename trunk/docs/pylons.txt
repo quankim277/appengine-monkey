@@ -1,0 +1,122 @@
+.. comment:
+
+    First some basic setup:
+
+    >>> from scripttest import TestFileEnvironment
+    >>> import os, shutil
+    >>> download_cache = os.path.abspath(os.path.join(base_path, '../pip-download-cache'))
+    >>> os.environ['PIP_DOWNLOAD_CACHE'] = download_cache
+    >>> if not os.path.exists(download_cache): os.makedirs(download_cache)
+    >>> env = TestFileEnvironment(base_path)
+
+
+To start up Pylons::
+
+    >>> result = env.run('python2.5', os.path.join(root_path, 'appengine-homedir.py'),
+    ...                  '--gae', google_path, 'PylonsTestApp', expect_stderr=True)
+    >>> print result.stdout
+    New python executable in PylonsTestApp/bin/python2.5
+    Also creating executable in PylonsTestApp/bin/python
+    ...
+    Run "PylonsTestApp/bin/pip install Package" to install new packages
+    To get access to your application from the command-line:
+    ...
+
+Now we have a simple working environment.  We'll adjust ``$PATH``,
+which is the same effect we'd get if with ``source
+PylonsTestApp/bin/activate`` in the shell::
+
+    >>> env.script_path.insert(0, os.path.join(base_path, 'PylonsTestApp/app/bin'))
+    >>> env.script_path.insert(0, os.path.join(base_path, 'PylonsTestApp/bin'))
+
+We'll install webtest to give it a try::
+
+    >>> result = env.run('pip', 'install', 'WebTest', expect_stderr=True)
+    >>> print result.stdout
+    Downloading/unpacking WebTest
+    ...
+    Successfully installed WebTest
+    ...
+    >>> assert 'PylonsTestApp/app/lib/python/webtest' in result.files_created
+
+Now we'll use that to test our app.  This gets tricky, because we are
+running Python code in a subprocess in this example::
+
+    >>> result = env.run('python', '-c', '''
+    ... import runner, webtest
+    ... app = webtest.TestApp(runner.application)
+    ... print app.get('/')
+    ... ''', expect_stderr=True)
+    >>> print result.stdout
+    Response: 200 OK
+    Content-Type: text/html
+    hello world
+    <BLANKLINE>
+
+Well, we haven't started using Pylons yet.  Of course, first we must
+install it::
+
+    >>> result = env.run('pip', 'install', 'Pylons', expect_stderr=True)
+    >>> assert 'PylonsTestApp/app/lib/python/pylons' in result.files_created
+
+Now we'll create a new Pylons app::
+
+    >>> result = env.run('paster', 'create', '--template=pylons',
+    ...                  'PylonsTestApp', 'template_engine=mako', 'sqlalchemy=false',
+    ...                  cwd=os.path.join(base_path, 'PylonsTestApp', 'app'),
+    ...                  expect_stderr=True)
+    >>> assert 'PylonsTestApp/app/PylonsTestApp/pylonstestapp' in result.files_created
+
+This doesn't put it where we'd like it to go.  Also, we're not using a
+bunch of the ``setup.py`` infrastructure.  So we have to clean up and
+move files::
+
+    >>> for filename in ['development.ini', 'ez_setup.py', 'MANIFEST.in', 'PylonsTestApp.egg-info', 'README.txt', 'setup.cfg', 'setup.py', 'test.ini']:
+    ...     filename = os.path.join(base_path, 'PylonsTestApp', 'app', 'PylonsTestApp', filename)
+    ...     if os.path.isdir(filename):
+    ...         shutil.rmtree(filename)
+    ...     else:
+    ...         os.unlink(filename)
+    >>> shutil.rmtree(os.path.join(base_path, 'PylonsTestApp', 'app', 'pylonstestapp'))
+    >>> for filename in ['pylonstestapp', 'docs']:
+    ...     src = os.path.join(base_path, 'PylonsTestApp', 'app', 'PylonsTestApp', filename)
+    ...     dest = os.path.join(base_path, 'PylonsTestApp', 'app', filename)
+    ...     shutil.move(src, dest)
+    >>> os.rmdir(os.path.join(base_path, 'PylonsTestApp', 'app', 'PylonsTestApp'))
+
+So now we have a simple Pylons app in place, but we need new
+configuration to get it running::
+
+    >>> config = os.path.join(base_path, 'PylonsTestApp', 'app', 'config.py')
+    >>> fp = open(config, 'w')
+    >>> fp.write('''\
+    ... APP_NAME = 'pylonstestapp.config.middleware:make_app'
+    ... APP_ARGS = ({},)
+    ... APP_KWARGS = dict()
+    ... APP_KWARGS.update({'beaker.session.type': 'google', 'beaker.session.table_name': 'beaker_session',
+    ...                    'beaker.session.key': 'pylonstestapp', 'beaker.session.secret': 'secret',
+    ...                    'beaker.cache.type': 'google', 'beaker.cache.table_name': 'beaker_cache'})
+    ... # You can overwrite these separately for different dev/live settings:
+    ... DEV_APP_ARGS = APP_ARGS
+    ... DEV_APP_KWARGS = APP_KWARGS
+    ... REMOVE_SYSTEM_LIBRARIES = ['webob']
+    ... ''')
+    >>> fp.close()
+
+Now we have to edit one file::
+
+    >>> environment_path = os.path.join(base_path, 'PylonsTestApp', 'app', 'pylonstestapp', 'config', 'environment.py')
+    >>> c = open(environment_path).read()
+    >>> c = c.replace("        module_directory=os.path.join(app_conf['cache_dir'], 'templates'),\n", '')
+    >>> open(environment_path, 'w').write(c)
+
+Now we should have a running Pylons app.  Let's try it::
+
+    >>> result = env.run('python', '-c', '''
+    ... import runner, webtest
+    ... app = webtest.TestApp(runner.application)
+    ... print repr(app.get('/'))
+    ... ''', expect_stderr=True, expect_error=True)
+    >>> print result.stdout
+    <200 OK text/html body='<?xml ver...l>\n'/4664>
+    <BLANKLINE>
