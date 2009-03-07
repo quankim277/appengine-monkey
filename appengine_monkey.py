@@ -2,6 +2,8 @@ import os
 import imp
 import sys
 
+interactive = os.environ.get('SERVER_SOFTWARE') == 'Development/interactive'
+
 class Missing(object):
     def __init__(self, name):
         self.name = name
@@ -9,9 +11,16 @@ class Missing(object):
         raise NotImplemented('%s is not implemented' % self.name)
     def __repr__(self):
         return '<Missing function %s>' % self.name
+    @classmethod
+    def patch(cls, module, name):
+        if not hasattr(module, name):
+            setattr(module, name, cls(module.__name__ + '.' + name))
 
 def patch(module):
     def decorate(func):
+        if interactive:
+            # Shortcut patching for this case
+            return func
         old_func = getattr(module, func.func_name, None)
         if getattr(old_func, 'patched', False):
             # This is a sign something is being re-patched
@@ -22,11 +31,10 @@ def patch(module):
         return func
     return decorate
 
-os.utime = Missing('os.utime')
-os.rename = Missing('os.rename')
-os.unlink = Missing('os.unlink')
-os.open = Missing('os.open')
-
+Missing.patch(os, 'utime')
+Missing.patch(os, 'rename')
+Missing.patch(os, 'unlink')
+Missing.patch(os, 'open')
 
 def can_access(path):
     try:
@@ -115,6 +123,8 @@ def patch_modules():
 
     (does not seem to work reliably for httplib -- see install_httplib())
     """
+    if interactive:
+        return
     repl_dir = get_file_dir('module-replacements')
     if repl_dir not in sys.path:
         sys.path.insert(0, repl_dir)
@@ -132,6 +142,8 @@ def install_httplib():
     Unlike patch_modules(), this imports the existing httplib and patches it in place.  This
     seems to be more reliable than modifying sys.path
     """
+    if interactive:
+        return
     # make extra sure some modules get the updated objects:
     for module in ['cookielib', 'urllib', 'urllib2']:
         if (module in sys.modules
@@ -141,27 +153,29 @@ def install_httplib():
     import httplib
     execfile(path_to_patched_httplib, httplib.__dict__)
 
-import socket
+if not interactive:
+    import socket
 
-class SocketError(Exception):
-    pass
-socket.error = SocketError
+    class SocketError(Exception):
+        pass
+    socket.error = SocketError
 
-@patch(socket)
-def _fileobject(socket_obj, mode='rb', bufsize=-1, close=False):
-    ## FIXME: this is a fix for urllib2:1096, where for some reason it does this
-    ## Why?  No idea.
-    return socket_obj
+    @patch(socket)
+    def _fileobject(socket_obj, mode='rb', bufsize=-1, close=False):
+        ## FIXME: this is a fix for urllib2:1096, where for some reason it does this
+        ## Why?  No idea.
+        return socket_obj
 
-import zipimport
+if not interactive:
+    import zipimport
 
-class ZipDirectoryCache(object):
-    ## This is purely for setuptools/pkg_resources
-    def __getitem__(self, path):
-        # This must return something, but its contents will only be
-        # inspected when pkg_resources tries to extract a resource
-        # (e.g., when using resource_filename), which can't happen on
-        # GAE.
-        return {}
+    class ZipDirectoryCache(object):
+        ## This is purely for setuptools/pkg_resources
+        def __getitem__(self, path):
+            # This must return something, but its contents will only be
+            # inspected when pkg_resources tries to extract a resource
+            # (e.g., when using resource_filename), which can't happen on
+            # GAE.
+            return {}
 
-zipimport._zip_directory_cache = ZipDirectoryCache()
+    zipimport._zip_directory_cache = ZipDirectoryCache()
