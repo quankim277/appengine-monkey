@@ -1133,7 +1133,7 @@ if lib_path not in sys.path:
 def activate_gae(location):
     if location not in sys.path:
         sys.path.append(location)
-    for path in '../lib/yaml/lib', '../lib/webob', '../lib/django':
+    for path in '../lib/antlr3', '../lib/yaml/lib', '../lib/webob', '../lib/django':
         path = os.path.join(location, path)
         if path not in sys.path:
             sys.path.append(path)
