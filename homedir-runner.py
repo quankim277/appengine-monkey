@@ -40,8 +40,6 @@ try:
     import appengine_monkey
 except ImportError:
     pass
-else:
-    appengine_monkey.install_httplib()
 
 module_name, obj_name = APP_NAME.split(':', 1)
 __import__(module_name)
