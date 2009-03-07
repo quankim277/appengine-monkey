@@ -21,6 +21,7 @@ To start up Pylons::
     Run "PylonsTestApp/bin/pip install Package" to install new packages
     To get access to your application from the command-line:
     ...
+    >>> assert 'PylonsTestApp/app/lib/python/appengine_monkey.py' in result.files_created
 
 Now we have a simple working environment.  We'll adjust ``$PATH``,
 which is the same effect we'd get if with ``source

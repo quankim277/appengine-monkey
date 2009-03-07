@@ -1025,6 +1025,18 @@ def after_install(options, home_dir):
                         filter_stdout=filter_ez_setup)
     finally:
         logger.indent -= 2
+    logger.notify('Installing appengine-monkey')
+    logger.indent += 2
+    try:
+        cmd = [os.path.abspath(join(home_dir, script_dir, 'python')),
+               'setup.py', 'install', '--single-version-externally-managed',
+               '--record=/tmp/appengine-tmp-record.txt',
+               '--home', os.path.abspath(os.path.join(home_dir, 'app'))]
+        call_subprocess(cmd,
+                        filter_stdout=filter_ez_setup,
+                        cwd=os.path.dirname(os.path.abspath(__file__)))
+    finally:
+        logger.indent -= 2
     logger.notify('Setting up appengine structure')
     logger.indent += 2
     try:
