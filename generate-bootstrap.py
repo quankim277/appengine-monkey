@@ -218,6 +218,10 @@ def after_install(options, home_dir):
                         cwd=os.path.dirname(os.path.abspath(__file__)))
     finally:
         logger.indent -= 2
+    logger.notify('Copying pkg_resources.py')
+    import glob
+    filename = glob.glob(os.path.join(home_dir, 'lib/python2.5/site-packages/*/pkg_resources.py'))[0]
+    shutil.copy(filename, os.path.join(home_dir, 'app', 'lib', 'python', 'pkg_resources.py'))
     logger.notify('Setting up appengine structure')
     logger.indent += 2
     try:
